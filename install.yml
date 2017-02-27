@@ -1,0 +1,19 @@
+---
+
+- name: Install CFN Openvpn
+  hosts: localhost
+  gather_facts: False
+  connection: local
+  roles:
+    - aws_cf
+
+- name: Setup Openvpn
+  hosts: "openvpn"
+  become: yes
+  remote_user: centos
+  gather_facts: yes
+  roles:
+#    - os_extraswap
+    - common
+    - role: openvpn
+      ovpnkeys: "{{ openvpn.keys_name }}"

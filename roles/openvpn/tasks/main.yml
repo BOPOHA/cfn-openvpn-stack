@@ -1,0 +1,30 @@
+---
+
+- name: MAIN install EPEL
+  yum: name=epel-release state=latest
+
+- name: MAIN install ovpn
+  yum: name=openvpn state=present
+
+- name: MAIN update tcp-config
+  template: src=tcp.conf.j2 dest=/etc/openvpn/tcp.conf owner=root group=root mode=644
+
+- name: MAIN update udp-config
+  template: src=udp.conf.j2 dest=/etc/openvpn/udp.conf owner=root group=root mode=644
+
+- name: MAIN create server keys
+  include: server_keys.yml
+  tags:
+    - server_keys
+
+- name: MAIN create clients keys
+  include: clients_keys.yml
+  with_items: "{{ ovpnkeys }}"
+  tags:
+    - client_keys
+
+- name: MAIN setup tcp-openvpn auto-start
+  service: name=openvpn@tcp.service enabled=yes state=started
+
+- name: MAIN setup udp-openvpn auto-start
+  service: name=openvpn@udp.service enabled=yes state=started

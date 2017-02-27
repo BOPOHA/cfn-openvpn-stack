@@ -1,0 +1,16 @@
+---
+
+# Role uses for non-standard port with SELinux in enforcing mode, for example UDP port 443.
+# https://www.jacobtomlinson.co.uk/2014/12/08/openvpn-non-standard-port-selinux-centos-6/
+
+- include: do_centos.yml
+  when: ansible_swaptotal_mb < 10 and ansible_memtotal_mb <= 512
+
+- name: Check existing open ports with SELinux
+  command: semanage port -l
+  register: se_ports
+
+- name: Make posible to run OpenVPN on non-standard port with SELinux
+  command: semanage port -a -t openvpn_port_t -p udp 443
+  when: se_ports.stdout | search("openvpn_port_t.*udp.* 443, ") == 0
+

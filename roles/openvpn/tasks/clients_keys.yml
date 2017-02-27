@@ -1,0 +1,55 @@
+---
+
+- name: CLIENT generate client key
+  command: >
+    openssl req -nodes -newkey rsa:4096 -keyout client_{{ item }}.key
+            -days 3650 -out client_{{ item }}.csr
+            -subj /CN=OpenVPN-{{inventory_hostname}}-client_{{ item }}/
+  args:
+    chdir:   /etc/openvpn/keys
+    creates: client_{{ item }}.key
+
+- name: CLIENT sign client key
+  command: >
+    openssl x509 -req -in client_{{ item }}.csr -out client_{{ item }}.crt
+            -CA    /etc/openvpn/keys/ca.crt -CAkey /etc/openvpn/keys/ca-key.pem -days 3650
+  args:
+    chdir:   /etc/openvpn/keys
+    creates: client_{{ item }}.crt
+
+- name: CLIENT read CA
+  command: cat /etc/openvpn/keys/ca.crt
+  register: ca_crt
+  changed_when: False
+  check_mode: no
+
+- name: CLIENT read CRT
+  command: cat /etc/openvpn/keys/client_{{ item }}.crt
+  register: client_crt
+  changed_when: False
+  check_mode: no
+
+- name: CLIENT read KEY
+  command: cat /etc/openvpn/keys/client_{{ item }}.key
+  register: client_key
+  changed_when: False
+  check_mode: no
+
+- name: CLIENT read TA
+  command: cat /etc/openvpn/keys/ta.key
+  register: tlsauth_key
+  changed_when: False
+  check_mode: no
+
+- name: CLIENT generate client config
+  template:
+    src:  client.ovpn.j2
+    dest: /etc/openvpn/keys/config_client_{{ item }}-{{inventory_hostname}}.ovpn
+    owner: root
+    group: root
+
+- name: CLIENT fetch config
+  fetch:
+    src:  /etc/openvpn/keys/config_client_{{ item }}-{{inventory_hostname}}.ovpn
+    dest: /tmp/ansible/
+    flat: yes

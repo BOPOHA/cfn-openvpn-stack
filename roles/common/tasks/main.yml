@@ -1,0 +1,56 @@
+---
+
+- ec2_facts:
+  register: ec2_facts
+
+- debug: msg={{ ec2_facts }}
+
+- name: COMMON set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: COMMON update hosts
+  lineinfile:
+    dest: /etc/hosts
+    state: present
+    regexp: "^127.0.0.1 {{ inventory_hostname }}"
+    line:    "127.0.0.1 {{ inventory_hostname }}"
+
+- yum:
+    name: iptables-services
+    state: present
+
+- service:
+    name: iptables
+    enabled: yes
+
+- name: get iptables nat table rules
+  command: iptables -L -t nat
+  register: ipnattablesrules
+  check_mode: no
+  changed_when: false
+
+- name: iptables - Perform NAT readdressing to base IP TCP.conf
+  command: iptables -t nat -A POSTROUTING -s 10.250.250.0/24 -j SNAT --to-source {{ ansible_default_ipv4.address }}  -m comment --comment "Perform NAT readdressing TCP"
+  when: ipnattablesrules.stdout.find("Perform NAT readdressing TCP") == -1
+
+- name: iptables - Perform NAT readdressing to base IP UDP.conf
+  command: iptables -t nat -A POSTROUTING -s 10.250.240.0/24 -j SNAT --to-source {{ ansible_default_ipv4.address }}  -m comment --comment "Perform NAT readdressing UDP"
+  when: ipnattablesrules.stdout.find("Perform NAT readdressing UDP") == -1
+
+- name: iptables-save
+  shell: /usr/libexec/iptables/iptables.init save
+  changed_when: False
+  check_mode: no
+
+- name: enable forwarding
+  sysctl: name=net.ipv4.ip_forward value=1 sysctl_set=yes state=present reload=yes ignoreerrors=yes
+
+#- name: modify gc_thresh1
+#  sysctl: name=net.ipv4.neigh.default.gc_thresh1 value=2048 sysctl_set=yes state=present reload=yes ignoreerrors=yes
+#
+#- name: modify gc_thresh2
+#  sysctl: name=net.ipv4.neigh.default.gc_thresh2 value=4096 sysctl_set=yes state=present reload=yes ignoreerrors=yes
+#
+#- name: modify gc_thresh3
+#  sysctl: name=net.ipv4.neigh.default.gc_thresh3 value=8192 sysctl_set=yes state=present reload=yes ignoreerrors=yes

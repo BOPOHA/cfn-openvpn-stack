@@ -1,0 +1,263 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "OpenVPN CentOS 7 Instance",
+  "Metadata": {
+    "CentosAMIVersion": "1602, released 02/26/2016",
+    "CentosURL": "https://wiki.centos.org/Cloud/AWS"
+  },
+  "Mappings": {
+    "Centos7RegionMap": {
+      "us-east-1": {
+        "64": "ami-6d1c2007"
+      },
+      "us-west-2": {
+        "64": "ami-d2c924b2"
+      },
+      "us-west-1": {
+        "64": "ami-af4333cf"
+      },
+      "eu-central-1": {
+        "64": "ami-9bf712f4"
+      },
+      "eu-west-1": {
+        "64": "ami-7abd0209"
+      },
+      "ap-southeast-1": {
+        "64": "ami-f068a193"
+      },
+      "ap-southeast-2": {
+        "64": "ami-fedafc9d"
+      },
+      "ap-northeast-1": {
+        "64": "ami-eec1c380"
+      },
+      "ap-northeast-2": {
+        "64": "ami-c74789a9"
+      },
+      "sa-east-1": {
+        "64": "ami-26b93b4a"
+      }
+    }
+  },
+  "Parameters": {
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the cluster",
+      "Type": "String"
+    },
+    "InstanceType": {
+      "AllowedValues": [
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "m1.medium"
+      ],
+      "ConstraintDescription": "must be valid instance type. ",
+      "Default": "t2.micro",
+      "Description": "Type of EC2 instance",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "vpcOPENVPN": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "subnetOPENVPN": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "RouteTableOPENVPN",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcOPENVPN"
+        },
+        "CidrBlock": "10.0.0.0/16",
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "securitygroupOPENVPN": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "sg_openvpn",
+        "VpcId": {
+          "Ref": "vpcOPENVPN"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "sg_openvpn"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "1194",
+            "ToPort": "1194",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "InternetGatewayOPENVPN": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "VPCGatewayAttachmentOPENVPN": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "InternetGatewayOPENVPN"
+        },
+        "VpcId": {
+          "Ref": "vpcOPENVPN"
+        }
+      }
+    },
+    "RouteTableOPENVPN": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcOPENVPN"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "RouteOPENVPN": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InternetGatewayOPENVPN",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableOPENVPN"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGatewayOPENVPN"
+        }
+      }
+    },
+    "SubnetRouteTableAssociationOPENVPN": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "subnetOPENVPN"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTableOPENVPN"
+        }
+      }
+    },
+    "instanceOPENVPN": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Stack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Role",
+            "Value": "openvpn-server"
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "Centos7RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "64"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "VolumeSize": "8",
+              "VolumeType": "gp2"
+            }
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "NetworkInterfaces": [
+          {
+            "SubnetId": {
+              "Ref": "subnetOPENVPN"
+            },
+            "DeviceIndex": "0",
+            "AssociatePublicIpAddress": "true",
+            "DeleteOnTermination": "true",
+            "GroupSet": [
+              {
+                "Ref": "securitygroupOPENVPN"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+client
+tls-client
+nobind
+# remote {{ inventory_hostname }} 443 tcp-client
+# remote {{ inventory_hostname }} 1194 udp
+remote {{ ansible_host }} 443 tcp-client
+remote {{ ansible_host }} 1194 udp
+dev tun
+comp-lzo
+cipher AES-256-CBC
+persist-tun
+persist-key
+verb 3
+keepalive 10 120
+key-direction 1
+remote-cert-tls server
+<ca>
+{{ ca_crt.stdout }}
+</ca>
+<cert>
+{{ client_crt.stdout }}
+</cert>
+<key>
+{{ client_key.stdout }}
+</key>
+
+<tls-auth>
+{{ tlsauth_key.stdout }}
+</tls-auth>
+
+# route-method exe
+# route-delay 3
+# resolv-retry infinite
+# redirect-gateway
+dhcp-option DNS 8.8.8.8
+dhcp-option DNS 8.8.4.4
+redirect-gateway def1 bypass-dhcp

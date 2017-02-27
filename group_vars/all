@@ -1,0 +1,10 @@
+stack_name: cfn-openvpn-stack
+
+openvpn:
+  keys_name:
+    - mynotebook
+    - myphone
+    - mytv
+    - mywork2
+  revocation_list:
+    - mywork

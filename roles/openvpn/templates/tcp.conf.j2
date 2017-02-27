@@ -1,0 +1,32 @@
+mode server
+tls-server
+management 127.0.0.1 55555
+port 443
+proto tcp
+dev tun
+
+server      10.250.250.0 255.255.255.0
+push "route 10.250.250.0 255.255.255.0"
+ifconfig-pool-persist ipp-tcp.txt
+keepalive 10 120
+
+persist-key
+persist-tun
+comp-lzo
+push "comp-lzo"
+cipher AES-256-CBC
+
+# duplicate-cn
+# user nobody # because 443 - privileged port as a non-priviledged user
+
+ca   keys/ca.crt
+cert keys/server.crt
+key  keys/server.key
+dh   keys/dh4096.pem
+
+tls-auth keys/ta.key 0
+tls-timeout 120
+
+push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 8.8.4.4"
+# push "redirect-gateway def1 bypass-dhcp"
