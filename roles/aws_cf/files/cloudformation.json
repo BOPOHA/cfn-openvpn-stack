@@ -58,7 +58,7 @@
     }
   },
   "Resources": {
-    "vpcOPENVPN": {
+    "VpcOPENVPN": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
         "CidrBlock": "10.0.0.0/16",
@@ -72,12 +72,12 @@
         ]
       }
     },
-    "subnetOPENVPN": {
+    "SubnetOPENVPN": {
       "Type": "AWS::EC2::Subnet",
-      "DependsOn": "RouteTableOPENVPN",
+      "DependsOn": "InternetGatewayOPENVPN",
       "Properties": {
         "VpcId": {
-          "Ref": "vpcOPENVPN"
+          "Ref": "VpcOPENVPN"
         },
         "CidrBlock": "10.0.0.0/16",
         "Tags": [
@@ -90,12 +90,76 @@
         ]
       }
     },
-    "securitygroupOPENVPN": {
+    "InternetGatewayOPENVPN": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "VPCGatewayAttachmentOPENVPN": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "InternetGatewayOPENVPN"
+        },
+        "VpcId": {
+          "Ref": "VpcOPENVPN"
+        }
+      }
+    },
+    "RouteTableOPENVPN": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VpcOPENVPN"
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": {
+              "Ref": "AWS::StackId"
+            }
+          }
+        ]
+      }
+    },
+    "RouteOPENVPN": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "InternetGatewayOPENVPN",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTableOPENVPN"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGatewayOPENVPN"
+        }
+      }
+    },
+    "SubnetRouteTableAssociationOPENVPN": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "SubnetOPENVPN"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTableOPENVPN"
+        }
+      }
+    },
+    "SecurityGroupOPENVPN": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "sg_openvpn",
         "VpcId": {
-          "Ref": "vpcOPENVPN"
+          "Ref": "VpcOPENVPN"
         },
         "Tags": [
           {
@@ -139,71 +203,7 @@
         ]
       }
     },
-    "InternetGatewayOPENVPN": {
-      "Type": "AWS::EC2::InternetGateway",
-      "Properties": {
-        "Tags": [
-          {
-            "Key": "Application",
-            "Value": {
-              "Ref": "AWS::StackId"
-            }
-          }
-        ]
-      }
-    },
-    "VPCGatewayAttachmentOPENVPN": {
-      "Type": "AWS::EC2::VPCGatewayAttachment",
-      "Properties": {
-        "InternetGatewayId": {
-          "Ref": "InternetGatewayOPENVPN"
-        },
-        "VpcId": {
-          "Ref": "vpcOPENVPN"
-        }
-      }
-    },
-    "RouteTableOPENVPN": {
-      "Type": "AWS::EC2::RouteTable",
-      "Properties": {
-        "VpcId": {
-          "Ref": "vpcOPENVPN"
-        },
-        "Tags": [
-          {
-            "Key": "Application",
-            "Value": {
-              "Ref": "AWS::StackId"
-            }
-          }
-        ]
-      }
-    },
-    "RouteOPENVPN": {
-      "Type": "AWS::EC2::Route",
-      "DependsOn": "InternetGatewayOPENVPN",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "RouteTableOPENVPN"
-        },
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "GatewayId": {
-          "Ref": "InternetGatewayOPENVPN"
-        }
-      }
-    },
-    "SubnetRouteTableAssociationOPENVPN": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "SubnetId": {
-          "Ref": "subnetOPENVPN"
-        },
-        "RouteTableId": {
-          "Ref": "RouteTableOPENVPN"
-        }
-      }
-    },
-    "instanceOPENVPN": {
+    "InstanceOPENVPN": {
       "Type": "AWS::EC2::Instance",
       "Properties": {
         "Tags": [
@@ -245,14 +245,14 @@
         "NetworkInterfaces": [
           {
             "SubnetId": {
-              "Ref": "subnetOPENVPN"
+              "Ref": "SubnetOPENVPN"
             },
             "DeviceIndex": "0",
             "AssociatePublicIpAddress": "true",
             "DeleteOnTermination": "true",
             "GroupSet": [
               {
-                "Ref": "securitygroupOPENVPN"
+                "Ref": "SecurityGroupOPENVPN"
               }
             ]
           }
