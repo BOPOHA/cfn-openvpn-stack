@@ -1,0 +1,39 @@
+---
+# CERTIFICATION REVOCATION LIST
+#
+- name: Create CRL index
+  file:
+    path: /etc/openvpn/keys/crl_index.txt
+    state: touch
+  changed_when: False
+  check_mode: no
+
+- name: Copy CRL config
+  copy:
+    src: crl_openssl.conf
+    dest:    /etc/openvpn/keys
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create initial (empty) CRL
+  command: openssl ca -config crl_openssl.conf -gencrl  -out crl.pem
+  args:
+    chdir:   /etc/openvpn/keys
+    creates: crl.pem
+
+- name: Revoke client
+  command: openssl ca -revoke client_{{ item }}.crt -config crl_openssl.conf
+  args:
+    chdir:   /etc/openvpn/keys
+  with_items: "{{ openvpn.revocation_list }}"
+  ignore_errors: true
+  changed_when: False
+  check_mode: no
+
+- name: Update CRL
+  command: openssl ca -config crl_openssl.conf -gencrl  -out crl.pem
+  args:
+    chdir:   /etc/openvpn/keys
+  changed_when: False
+  check_mode: no

@@ -23,6 +23,11 @@
   tags:
     - client_keys
 
+- name: MAIN revoke clients keys
+  include: revoke_keys.yml
+  tags:
+    - revoke_keys
+
 - name: MAIN setup tcp-openvpn auto-start
   service: name=openvpn@tcp.service enabled=yes state=started
 

@@ -1,5 +1,7 @@
 - name: Include Vault vars
   include_vars: "vault_vars/aws"
+  tags:
+    - revoke_keys
 
 - cloudformation:
     stack_name: "{{  stack_name  }}"
@@ -24,6 +26,8 @@
       "tag:Role": "openvpn-server"
       "instance-state-name": "running"
   register: ec2
+  tags:
+    - revoke_keys
 
 - debug: msg="{{ item['public_ip_address'] }}"
   with_items: "{{ ec2.instances }}"
@@ -33,6 +37,10 @@
     ansible_host: "{{ item.1['public_ip_address'] }}"
     groupname: "openvpn"
   with_indexed_items: "{{ ec2.instances }}"
+  changed_when: False
+  check_mode: no
+  tags:
+    - revoke_keys
 
 - wait_for:
     host: "{{ item.public_ip_address }}"
