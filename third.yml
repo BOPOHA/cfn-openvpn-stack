@@ -1,0 +1,12 @@
+---
+
+- name: Setup Openvpn
+  hosts: "openvpn"
+  become: no
+  remote_user: root
+  gather_facts: yes
+  roles:
+#    - os_extraswap
+    - common
+    - role: openvpn
+      ovpnkeys: "{{ openvpn.keys_name }}"
