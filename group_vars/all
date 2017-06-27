@@ -4,7 +4,8 @@ openvpn:
   keys_name:
     - mynotebook
     - myphone
-    - mytv
-    - mywork2
+    - momphone
+    - mombook
   revocation_list:
     - mywork2
+    - mytv
