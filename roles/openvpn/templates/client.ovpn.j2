@@ -3,8 +3,11 @@ tls-client
 nobind
 # remote {{ inventory_hostname }} 443 tcp-client
 # remote {{ inventory_hostname }} 1194 udp
-remote {{ ansible_host }} 443 tcp-client
-remote {{ ansible_host }} 1194 udp
+# remote {{ ansible_host }} 443  tcp-client
+# remote {{ ansible_host }} 1194 udp
+remote {{ openvpn_fqdn }} 443  tcp-client
+remote {{ openvpn_fqdn }} 53   tcp-client
+remote {{ openvpn_fqdn }} 1194 udp
 dev tun
 comp-lzo
 cipher AES-256-CBC

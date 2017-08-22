@@ -1,5 +1,0 @@
-aws:
-  aws_access_key: XXXXXXXXXXXXXXXXXXXX
-  aws_secret_key: YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
-  aws_region_name: eu-west-1
-  ec2_key_name: zzzzzzz-zzzzz
